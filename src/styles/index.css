@@ -1,0 +1,151 @@
+@import "tailwindcss";
+
+/* ============================================================================
+   GSAP-derived design system
+   ----------------------------------------------------------------------------
+   Dark canvas, warm cream type, five colour-coded discipline hues.
+   Outlined-only controls: no filled CTAs, no box-shadows anywhere.
+   Token values come straight from the DESIGN.md reference.
+   ========================================================================== */
+
+@theme {
+  /* --- Core palette ------------------------------------------------------- */
+  --color-just-black: #0e100f;
+  --color-off-black: #191919;
+  --color-surface-cream: #fffce1;
+  --color-surface-50: #7c7c6f;
+  --color-surface-25: #42433d;
+
+  /* --- Discipline hues (taxonomy — never reuse across disciplines) --------- */
+  --color-shockingly-green: #0ae448;   /* brand mark */
+  --color-light-green: #abff84;
+  --color-pink: #fec5fb;               /* Direction     */
+  --color-orangey: #ff8709;            /* Cinematography */
+  --color-lilac: #9d95ff;              /* Editing       */
+  --color-blue: #00bae2;               /* Content & Social */
+  --color-core-green: #dfffd1;
+  --color-lipstick-pink: #f100cb;
+
+  /* --- Typography ---------------------------------------------------------
+     Mori is a licensed face; DESIGN.md names Inter Tight as the substitute. */
+  --font-mori: "Inter Tight", "Söhne", ui-sans-serif, system-ui, -apple-system,
+    "Segoe UI", sans-serif;
+
+  --font-weight-regular: 400;
+  --font-weight-semibold: 600;
+
+  /* Type scale — size / line-height / tracking travel together as one token. */
+  --text-caption: 14px;
+  --text-caption--line-height: 1.4;
+  --text-caption--letter-spacing: -0.14px;
+
+  --text-body-sm: 16px;
+  --text-body-sm--line-height: 1.15;
+
+  --text-body: 19px;
+  --text-body--line-height: 1.15;
+
+  --text-body-lg: 23px;
+  --text-body-lg--line-height: 1.38;
+  --text-body-lg--letter-spacing: -0.23px;
+
+  --text-subheading: clamp(26px, 3.4vw, 34px);
+  --text-subheading--line-height: 1.2;
+  --text-subheading--letter-spacing: -0.34px;
+
+  --text-heading-sm: clamp(32px, 4.4vw, 44px);
+  --text-heading-sm--line-height: 1.2;
+  --text-heading-sm--letter-spacing: -0.44px;
+
+  --text-heading: clamp(38px, 6.4vw, 66px);
+  --text-heading--line-height: 1.2;
+  --text-heading--letter-spacing: -0.66px;
+
+  --text-heading-lg: clamp(52px, 9vw, 101px);
+  --text-heading-lg--line-height: 1;
+  --text-heading-lg--letter-spacing: -1.11px;
+
+  /* 224px is the design spec at full width; clamp keeps it intact on desktop
+     while staying legible on small screens. */
+  --text-display: clamp(52px, 12.4vw, 224px);
+  --text-display--line-height: 0.9;
+  --text-display--letter-spacing: -0.02em;
+
+  /* --- Radius ------------------------------------------------------------- */
+  --radius-cards: 8px;
+  --radius-buttons: 100px;
+  --radius-pills: 9999px;
+
+  /* --- Layout ------------------------------------------------------------- */
+  --container-page: 1280px;
+}
+
+/* ============================================================================
+   BASE
+   ========================================================================== */
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+
+  /* Single dark stage — the canvas is never broken by a light section. */
+  /* Anchor targets clear the sticky header when jumped to. */
+  :target,
+  section[id] {
+    scroll-margin-top: 6rem;
+  }
+
+  body {
+    background-color: var(--color-just-black);
+    color: var(--color-surface-cream);
+    font-family: var(--font-mori);
+    font-weight: var(--font-weight-regular);
+    font-size: var(--text-body);
+    line-height: 1.15;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  ::selection {
+    background-color: var(--color-shockingly-green);
+    color: var(--color-just-black);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-shockingly-green);
+    outline-offset: 3px;
+    border-radius: 4px;
+  }
+}
+
+@layer utilities {
+  .text-balance { text-wrap: balance; }
+  .text-pretty { text-wrap: pretty; }
+
+  /* Brand gradient, used only as a border stroke on the single primary CTA. */
+  .cta-gradient-border {
+    background:
+      linear-gradient(var(--color-just-black), var(--color-just-black)) padding-box,
+      linear-gradient(114.41deg, #0ae448 20.74%, #abff84 65.5%) border-box;
+    border: 1.5px solid transparent;
+  }
+
+  /* Green wordmark gradient for the brand mark. */
+  .text-gradient-green {
+    background: linear-gradient(114.41deg, #0ae448 20.74%, #abff84 65.5%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+}
