@@ -178,56 +178,84 @@ export const projects = [
   },
 ]
 
-/* Vertical short-form work. `image` points at /public/img/thumbnail/*.jpg —
-   drop the originals in and they render automatically; until then each falls
-   back to generated gradient art. */
+/* Vertical short-form work. Stills live in /public/thumbnail/.
+   Link targets are carried over from the previous site, which mapped these
+   filenames to these reels. `href: ''` renders an unlinked tile. */
 export const reels = [
   {
     title: 'Reel for @solocreators.app',
     href: 'https://www.instagram.com/reel/DDhMOoCyO44/',
-    image: '/img/thumbnail/insta1.jpg',
+    image: '/thumbnail/insta1.jpg',
     tags: ['Shot', 'Edited'],
   },
   {
     title: 'Reel for @solocreators.app',
     href: 'https://www.instagram.com/reel/DDwqfLByDKh/',
-    image: '/img/thumbnail/insta2.jpg',
+    image: '/thumbnail/insta2.jpg',
     tags: ['Shot', 'Edited'],
   },
   {
     title: 'Reel for @solocreators.app',
     href: 'https://www.instagram.com/reel/DGF5s9fyCdU/',
-    image: '/img/thumbnail/insta3.jpg',
+    image: '/thumbnail/insta3.jpg',
     tags: ['Shot', 'Edited'],
   },
   {
     title: 'Reel for @atherenergy',
     href: 'https://www.instagram.com/reel/DFRvI_8zvE4/',
-    image: '/img/thumbnail/insta4.jpg',
+    image: '/thumbnail/insta4.jpg',
     tags: ['Shot', 'Edited'],
   },
   {
     title: 'Reel for @solocreators.app',
     href: 'https://www.instagram.com/reel/C9H-GzbtZ82/',
-    image: '/img/thumbnail/insta5.jpg',
+    image: '/thumbnail/insta5.jpg',
     tags: ['Shot', 'Edited'],
   },
   {
     title: 'Reel for @poweredbyada',
     href: 'https://www.instagram.com/reel/C7TtjUtNBsU/',
-    image: '/img/thumbnail/insta6.jpg',
+    image: '/thumbnail/insta6.jpg',
+    tags: ['Shot', 'Edited'],
+  },
+  {
+    // TODO: no link — this still was not on the previous site. Add the reel
+    // URL and a real title, or delete this entry.
+    title: 'Short-form reel',
+    href: '',
+    image: '/thumbnail/insta7.jpg',
     tags: ['Shot', 'Edited'],
   },
 ]
 
+/* Logo files live in /public/brandlogos/ — paths are lowercase to match the
+   directory exactly, since Netlify's filesystem is case-sensitive. A missing
+   file falls back to the brand name as a cream wordmark. */
 export const brands = [
-  'Google', 'Meesho', 'BGMI', 'Prime Video', 'Rapido', 'Flipkart',
-  'Ather', 'Jio Hotstar', 'Azadi Records', 'Ajio', 'New Me', 'Durex',
+  { name: 'Google', logo: '/brandlogos/google.png' },
+  { name: 'Meesho', logo: '/brandlogos/meesho.png' },
+  { name: 'BGMI', logo: '/brandlogos/bgmi.jpg' },
+  { name: 'Prime Video', logo: '/brandlogos/primevideo.png' },
+  { name: 'Rapido', logo: '/brandlogos/rapido.jpg' },
+  { name: 'Flipkart', logo: '/brandlogos/flipkart.png' },
+  { name: 'Ather', logo: '/brandlogos/ather.png' },
+  { name: 'Jio Hotstar', logo: '/brandlogos/jiohotstar.webp' },
+  { name: 'Azadi Records', logo: '/brandlogos/azadi.png' },
+  { name: 'Ajio', logo: '/brandlogos/ajio.png' },
+  { name: 'New Me', logo: '/brandlogos/newme.jpg' },
+  { name: 'Durex', logo: '/brandlogos/durex.png' },
 ]
 
+/* Instagram pages — these are profile pictures, so they render as circles.
+   Note durex.jpg here is the "Thank you Durex" page, distinct from the Durex
+   brand logo (durex.png) above. */
 export const pages = [
-  'ScoopWhoop', 'Solo', 'ThankYou Durex', 'Powered By Ada',
-  'OkTested by SW', 'AdParody',
+  { name: 'ScoopWhoop', logo: '/brandlogos/scoopwhoop.png', round: true },
+  { name: 'Solo', logo: '/brandlogos/solo.jpg', round: true },
+  { name: 'ThankYou Durex', logo: '/brandlogos/durex.jpg', round: true },
+  { name: 'Powered By Ada', logo: '/brandlogos/ada.jpg', round: true },
+  { name: 'OkTested by SW', logo: '/brandlogos/oktested.jpg', round: true },
+  { name: 'AdParody', logo: '/brandlogos/adparody.jpg', round: true },
 ]
 
 export const contact = {

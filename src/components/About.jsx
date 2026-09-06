@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { about, brands, pages } from '../content/site.js'
 import { Section, Bracket, Reveal } from './ui/Primitives.jsx'
 
@@ -50,8 +51,9 @@ export function About() {
   )
 }
 
-/* Typographic logo wall. Set as cream wordmarks on hairline-bordered tiles —
-   swap in real logo images later without changing the layout. */
+/* Logo wall. Each tile shows the brand's logo; if the file is missing the
+   tile falls back to the brand name as a cream wordmark, so the wall is never
+   broken by an absent asset. */
 function LogoWall({ title, items, className = '' }) {
   return (
     <div className={className}>
@@ -61,15 +63,43 @@ function LogoWall({ title, items, className = '' }) {
       {/* Borders sit on the items themselves, so a short final row leaves
           empty space rather than painting the divider colour as a block. */}
       <ul className="mt-6 grid grid-cols-2 border-t border-l border-surface-25 sm:grid-cols-3 lg:grid-cols-4">
-        {items.map((name) => (
+        {items.map((item) => (
           <li
-            key={name}
-            className="flex min-h-[6.5rem] items-center justify-center border-r border-b border-surface-25 px-4 py-6 text-center text-body text-surface-50 transition-colors hover:text-surface-cream"
+            key={item.name}
+            className="flex min-h-[8.5rem] flex-col items-center justify-center gap-3 border-r border-b border-surface-25 px-4 py-6 text-center"
           >
-            {name}
+            <LogoTile item={item} />
           </li>
         ))}
       </ul>
     </div>
+  )
+}
+
+function LogoTile({ item }) {
+  const [failed, setFailed] = useState(!item.logo)
+
+  if (failed) {
+    return <span className="text-body text-surface-50">{item.name}</span>
+  }
+
+  return (
+    <>
+      {/* Most assets are square app icons carrying their own background, so a
+          small radius keeps them from reading as hard-edged cut-outs. Profile
+          pictures are cropped to circles instead. */}
+      <img
+        src={item.logo}
+        alt=""
+        loading="lazy"
+        onError={() => setFailed(true)}
+        className={
+          item.round
+            ? 'size-14 rounded-full object-cover'
+            : 'h-14 w-auto max-w-[75%] rounded-cards object-contain'
+        }
+      />
+      <span className="text-caption text-surface-50">{item.name}</span>
+    </>
   )
 }

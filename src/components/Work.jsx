@@ -93,11 +93,19 @@ function ReelCard({ reel, index }) {
       </div>
 
       <div className="p-4">
+        {/* A reel with no link yet renders as a plain tile rather than a
+            dead anchor. */}
         <h4 className="flex items-start gap-1.5 text-body-sm text-surface-cream">
-          <a href={reel.href} target="_blank" rel="noreferrer noopener" className="after:absolute after:inset-0">
-            {reel.title}
-          </a>
-          <ArrowUpRight className="mt-0.5 size-3.5 shrink-0 text-surface-50" />
+          {reel.href ? (
+            <>
+              <a href={reel.href} target="_blank" rel="noreferrer noopener" className="after:absolute after:inset-0">
+                {reel.title}
+              </a>
+              <ArrowUpRight className="mt-0.5 size-3.5 shrink-0 text-surface-50" />
+            </>
+          ) : (
+            reel.title
+          )}
         </h4>
         <ul className="mt-3 flex flex-wrap gap-1.5">
           {reel.tags.map((t) => (
