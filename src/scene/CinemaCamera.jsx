@@ -1,4 +1,4 @@
-import { useMemo, useRef } from 'react'
+import { useLayoutEffect, useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { RoundedBox, useTexture } from '@react-three/drei'
 import {
@@ -20,9 +20,9 @@ import { damp, ease, range, smooth } from '../lib/math'
 
 const REST = new Vector3(-0.1, 1.38, 0.4)
 const FLIGHT = new CatmullRomCurve3([
-  new Vector3(4.2, 3.4, -4.5),
-  new Vector3(2.8, 2.4, -0.6),
-  new Vector3(1.1, 1.75, 1.4),
+  new Vector3(2.9, 3.1, -3.2),
+  new Vector3(2.0, 2.3, -1.0),
+  new Vector3(0.9, 1.75, 1.1),
   REST.clone(),
 ])
 const EXIT = new CatmullRomCurve3([
@@ -48,8 +48,9 @@ function useMaterials() {
       glass: {
         color: '#06080f',
         metalness: 1,
-        roughness: 0.04,
+        roughness: 0.12,
         clearcoat: 1,
+        clearcoatRoughness: 0.12,
         iridescence: 1,
         iridescenceIOR: 1.8,
         iridescenceThicknessRange: [200, 600],
@@ -100,24 +101,25 @@ function useMonitorTexture() {
   }, [still])
 }
 
+/** Knurling around a ring: one instanced draw instead of dozens of meshes. */
 function Ridges({ count, radius, length, z, width = 0.004, mat }) {
-  const items = useMemo(
-    () =>
-      Array.from({ length: count }, (_, i) => {
-        const a = (i / count) * Math.PI * 2
-        return { a, x: Math.cos(a) * radius, y: Math.sin(a) * radius }
-      }),
-    [count, radius],
-  )
+  const ref = useRef()
+  useLayoutEffect(() => {
+    const o = new Object3D()
+    for (let i = 0; i < count; i++) {
+      const a = (i / count) * Math.PI * 2
+      o.position.set(Math.cos(a) * radius, Math.sin(a) * radius, 0)
+      o.rotation.set(0, 0, a)
+      o.updateMatrix()
+      ref.current.setMatrixAt(i, o.matrix)
+    }
+    ref.current.instanceMatrix.needsUpdate = true
+  }, [count, radius])
   return (
-    <group position={[0, 0, z]}>
-      {items.map(({ a, x, y }, i) => (
-        <mesh key={i} position={[x, y, 0]} rotation={[0, 0, a]}>
-          <boxGeometry args={[width, width * 0.9, length]} />
-          <meshStandardMaterial {...mat} />
-        </mesh>
-      ))}
-    </group>
+    <instancedMesh ref={ref} args={[null, null, count]} position={[0, 0, z]}>
+      <boxGeometry args={[width, width * 0.9, length]} />
+      <meshStandardMaterial {...mat} />
+    </instancedMesh>
   )
 }
 
@@ -389,7 +391,7 @@ export default function CinemaCamera() {
     if (!g) return
     const p = state.progress
     const t = clock.elapsedTime
-    const enter = range(p, 0.14, 0.245)
+    const enter = range(p, 0.115, 0.245)
     const exit = range(p, 0.415, 0.475)
     g.visible = enter > 0 && exit < 1
     if (!g.visible) return

@@ -436,8 +436,8 @@ export default function Timeline() {
   return (
     <group ref={root} visible={false}>
       {/* panel */}
-      <RoundedBox args={[5.05, 2.75, 0.04]} radius={0.05} smoothness={4} position={[0, 0.1, -0.03]}>
-        <meshPhysicalMaterial color="#0b0c0e" roughness={0.3} metalness={0.3} clearcoat={0.6} transparent opacity={0.94} />
+      <RoundedBox args={[5.05, 2.75, 0.04]} radius={0.018} smoothness={4} position={[0, 0.1, -0.03]}>
+        <meshStandardMaterial color="#0b0c0e" roughness={0.7} metalness={0.2} transparent opacity={0.94} />
       </RoundedBox>
       <mesh position={[0, 1.45, 0.0]}>
         <planeGeometry args={[4.9, 0.004]} />

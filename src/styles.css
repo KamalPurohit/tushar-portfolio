@@ -327,7 +327,24 @@ button {
   padding: 0 var(--gutter) 12vh;
 }
 .chapter > * {
+  position: relative;
   max-width: min(600px, 100%);
+}
+/* A soft scrim under the copy so it reads over busy frames. */
+.chapter::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: min(900px, 100%);
+  height: 70vh;
+  background: radial-gradient(70% 60% at 20% 85%, rgba(5, 5, 5, 0.72), transparent 70%);
+  pointer-events: none;
+}
+.chapter--right::before {
+  left: auto;
+  right: 0;
+  background: radial-gradient(70% 60% at 80% 85%, rgba(5, 5, 5, 0.72), transparent 70%);
 }
 .chapter--right {
   align-items: flex-end;
@@ -484,6 +501,14 @@ button {
 
 /* ---- 3D social cards (drei <Html>) ------------------------------------ */
 
+.html-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 11;
+  pointer-events: none;
+  overflow: hidden;
+}
+
 .social-card {
   width: 250px;
   overflow: hidden;
@@ -628,7 +653,7 @@ button {
     display: none;
   }
   .rail {
-    right: 6px;
+    display: none;
   }
   .hud {
     inset: 10px;
@@ -637,7 +662,7 @@ button {
     display: none;
   }
   .hero__role {
-    font-size: 11.5vw;
+    font-size: 8.8vw;
   }
   .hero__role--a { top: 15vh; left: 20px; }
   .hero__role--b { top: 27vh; right: 26px; }
@@ -662,7 +687,8 @@ button {
     justify-content: flex-start;
   }
   .chapter__title {
-    font-size: 12vw;
+    font-size: 9.2vw;
+    letter-spacing: -0.05em;
   }
   .contact {
     grid-template-columns: 1fr;

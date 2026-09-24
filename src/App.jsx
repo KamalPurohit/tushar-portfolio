@@ -59,6 +59,8 @@ export default function App() {
     <>
       {webgl ? <Experience /> : <div className="scene scene--fallback" />}
       <Overlay />
+      {/* Fixed layer for in-scene HTML (drei <Html>); body would scroll it away. */}
+      <div id="html-layer" className="html-layer" />
       {!state.mobile && <Cursor />}
       {webgl && <Loader />}
       <div className="film" style={{ height: `${FILM_LENGTH_VH}vh` }} aria-hidden="true" />

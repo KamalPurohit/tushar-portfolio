@@ -1,5 +1,5 @@
 import { useMemo, useRef } from 'react'
-import { useFrame } from '@react-three/fiber'
+import { useFrame, useThree } from '@react-three/fiber'
 import { Environment, Lightformer, MeshReflectorMaterial, SpotLight, Text } from '@react-three/drei'
 import { AdditiveBlending, CanvasTexture, Color, Object3D } from 'three'
 import { state } from '../lib/state'
@@ -104,8 +104,11 @@ function Dust({ count }) {
             vec4 mv = modelViewMatrix * vec4(p, 1.0);
             gl_Position = projectionMatrix * mv;
             float beam = smoothstep(2.6, 0.2, length(p.xz));
-            vAlpha = (0.15 + 0.85 * beam) * (0.35 + 0.65 * aSeed) * (1.0 + uEnergy);
-            gl_PointSize = (1.4 + aSeed * 3.0) * uPixel * (7.0 / -mv.z);
+            // Fade motes that drift right up to the lens instead of letting them
+            // balloon into out-of-focus blobs.
+            float near = smoothstep(0.8, 2.0, -mv.z);
+            vAlpha = (0.15 + 0.85 * beam) * (0.35 + 0.65 * aSeed) * (1.0 + uEnergy) * near;
+            gl_PointSize = min((1.4 + aSeed * 3.0) * uPixel * (7.0 / -mv.z), 14.0 * uPixel);
           }`}
         fragmentShader={/* glsl */ `
           varying float vAlpha;
@@ -122,6 +125,13 @@ function Dust({ count }) {
 /* The giant name the figure stands in front of. */
 function HeroName() {
   const ref = useRef()
+  const viewport = useThree((s) => s.viewport)
+  const camera = useThree((s) => s.camera)
+  // Fit the name to the frame's width at its depth (portrait screens).
+  const fit = useMemo(() => {
+    const w = viewport.getCurrentViewport(camera, [0, 1.6, -3]).width
+    return Math.min(1.55, (w * 0.94) / 5.7)
+  }, [viewport, camera])
   useFrame(() => {
     const p = state.progress
     const out = ease(p, 0.06, 0.16)
@@ -134,7 +144,7 @@ function HeroName() {
     <Text
       ref={ref}
       font="/fonts/inter-tight-600.ttf"
-      fontSize={1.55}
+      fontSize={fit}
       letterSpacing={-0.045}
       color="#8b8378"
       anchorX="center"

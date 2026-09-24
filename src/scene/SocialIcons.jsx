@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
-import { Html, RoundedBox } from '@react-three/drei'
+import { Html } from '@react-three/drei'
 import { Color, ExtrudeGeometry, MathUtils, Path, Plane, Raycaster, Shape, Vector2, Vector3 } from 'three'
 import { socials } from '../content/site'
 import { state } from '../lib/state'
@@ -115,14 +115,29 @@ const GLYPHS = {
 
 /* Resting constellation around the figure (x, y relative to chest, z). */
 const LAYOUT = [
-  [-1.35, 0.5, 0.35],
-  [1.3, 0.62, 0.25],
-  [-1.05, -0.45, 0.95],
-  [1.12, -0.32, 1.0],
-  [-0.62, 1.05, -0.55],
-  [0.7, 1.12, -0.45],
+  [-1.45, 0.88, 0.0],
+  [1.25, 0.58, 0.2],
+  [-0.9, 0.18, 1.0],
+  [1.05, -0.3, 0.8],
+  [-0.42, 1.18, -0.6],
+  [0.6, 1.02, -0.45],
 ]
+const ICON_SCALE = 0.78
 const CENTER = new Vector3(0, 1.25, 0)
+
+/* The tile: a rounded square slab with a soft bevel all round. */
+const TILE = (() => {
+  const g = new ExtrudeGeometry(roundRect(new Shape(), -0.2, -0.2, 0.4, 0.4, 0.085), {
+    depth: 0.06,
+    bevelEnabled: true,
+    bevelThickness: 0.03,
+    bevelSize: 0.03,
+    bevelSegments: 6,
+    curveSegments: 24,
+  })
+  g.center()
+  return g
+})()
 
 function Icon({ item, index, active, setActive, aspect }) {
   const g = useRef()
@@ -142,14 +157,16 @@ function Icon({ item, index, active, setActive, aspect }) {
       }),
     [item.id],
   )
+  const side = LAYOUT[index][0] > 0 ? -1 : 1 // cards open toward the centre
   const s = useMemo(
     () => ({
       pos: new Vector3(),
       home: new Vector3(),
+      // Scatter outward and away from the lens, never through it.
       scatter: new Vector3(
-        (hash(index * 3 + 1) - 0.5) * 2,
-        (hash(index * 3 + 2) - 0.2) * 1.4,
-        hash(index * 3 + 3) + 0.4,
+        LAYOUT[index][0] * (1.2 + hash(index * 3 + 1)),
+        (hash(index * 3 + 2) - 0.3) * 2.2,
+        -0.6 - hash(index * 3 + 3) * 1.4,
       )
         .normalize()
         .multiplyScalar(6),
@@ -172,12 +189,18 @@ function Icon({ item, index, active, setActive, aspect }) {
     const p = state.progress
     const present = window4(p, 0.615, 0.69, 0.79, 0.86)
     el.visible = present > 0.002
-    if (!el.visible) return
+    if (!el.visible) {
+      if (isActive) {
+        setActive(null)
+        state.hovering = null
+      }
+      return
+    }
     const t = clock.elapsedTime
     const [lx, ly, lz] = LAYOUT[index]
     // Portrait screens pull the constellation in and stretch it vertically.
     const squeeze = Math.min(1, aspect / 1.35)
-    s.home.set(lx * lerpN(0.55, 1, squeeze), ly * lerpN(1.35, 1, squeeze), lz).add(CENTER)
+    s.home.set(lx * lerpN(0.4, 1, squeeze), ly * lerpN(1.45, 1, squeeze), lz).add(CENTER)
     // Slow orbit of the whole constellation plus each icon's own bob.
     const orbit = Math.sin(t * 0.15 + index) * 0.12
     s.home.x += Math.sin(orbit) * lz
@@ -205,7 +228,7 @@ function Icon({ item, index, active, setActive, aspect }) {
     el.rotation.y = damp(el.rotation.y, (1 - s.hover) * spin + s.hover * state.pointer.x * 0.5, 5, dt)
     el.rotation.x = damp(el.rotation.x, Math.sin(t * 0.4 + index) * 0.15 * (1 - s.hover) - s.hover * state.pointer.y * 0.4, 5, dt)
     el.rotation.z = damp(el.rotation.z, (1 - s.hover) * Math.sin(t * 0.3 + index * 2) * 0.1, 5, dt)
-    el.scale.setScalar(MathUtils.lerp(0.4, 1, ease(present, 0, 1)) * (1 + s.hover * 0.28))
+    el.scale.setScalar(ICON_SCALE * MathUtils.lerp(0.4, 1, ease(present, 0, 1)) * (1 + s.hover * 0.28))
 
     s.tileCol.copy(s.baseTile).lerp(brand, 0.18 * s.hover)
     tile.current.material.color.copy(s.tileCol)
@@ -221,11 +244,9 @@ function Icon({ item, index, active, setActive, aspect }) {
 
   return (
     <group ref={g} visible={false}>
-      <RoundedBox
+      <mesh
         ref={tile}
-        args={[0.46, 0.46, 0.12]}
-        radius={0.1}
-        smoothness={6}
+        geometry={TILE}
         castShadow
         onPointerOver={(e) => {
           e.stopPropagation()
@@ -241,15 +262,23 @@ function Icon({ item, index, active, setActive, aspect }) {
           open()
         }}
       >
-        <meshPhysicalMaterial color="#131416" roughness={0.22} metalness={0.35} clearcoat={1} clearcoatRoughness={0.15} />
-      </RoundedBox>
-      <mesh ref={glyph} geometry={geo} position={[0, 0, 0.055]} castShadow>
-        <meshStandardMaterial color="#f1ece2" roughness={0.3} metalness={0.2} emissive="#f1ece2" emissiveIntensity={0.25} />
+        <meshPhysicalMaterial color="#131416" roughness={0.32} metalness={0.25} clearcoat={0.8} clearcoatRoughness={0.28} envMapIntensity={0.55} />
+      </mesh>
+      <mesh ref={glyph} geometry={geo} position={[0, 0, 0.05]} castShadow>
+        <meshStandardMaterial color="#f1ece2" roughness={0.45} metalness={0.1} emissive="#f1ece2" emissiveIntensity={0.25} envMapIntensity={0.6} />
       </mesh>
       {isActive && (
-        <Html position={[0, -0.34, 0.1]} center zIndexRange={[40, 0]} style={{ pointerEvents: 'none' }}>
+        <Html position={[side * 0.62, 0, 0.1]} center portal={htmlLayer} zIndexRange={[40, 0]} style={{ pointerEvents: 'none' }}>
           <div className="social-card" style={{ '--brand': item.color }}>
-            <img src={item.preview} alt="" loading="lazy" />
+            <img
+              src={item.preview}
+              alt=""
+              loading="lazy"
+              onError={(e) => {
+                e.currentTarget.onerror = null
+                e.currentTarget.src = '/thumbnail/insta2.jpg'
+              }}
+            />
             <div className="social-card__body">
               <span className="social-card__name">{item.name}</span>
               <span className="social-card__handle">{item.handle}</span>
@@ -264,6 +293,7 @@ function Icon({ item, index, active, setActive, aspect }) {
 }
 
 const lerpN = (a, b, t) => a + (b - a) * t
+const htmlLayer = { get current() { return document.getElementById('html-layer') } }
 
 export default function SocialIcons() {
   const [active, setActive] = useState(null)

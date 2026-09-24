@@ -144,10 +144,10 @@ export default function Humanoid() {
   const eyes = useMemo(() => {
     const mat = new MeshPhysicalMaterial({
       color: '#050505',
-      roughness: 0.08,
+      roughness: 0.14,
       metalness: 0.2,
       clearcoat: 1,
-      clearcoatRoughness: 0.02,
+      clearcoatRoughness: 0.12,
     })
     const geo = new SphereGeometry(1.25, 24, 16) // bone space is centimetres
     return [rig.eyeL, rig.eyeR].filter(Boolean).map((bone) => {
@@ -260,7 +260,7 @@ export default function Humanoid() {
     tmp.ndc.set(state.pointer.x, state.pointer.y)
     tmp.raycaster.setFromCamera(tmp.ndc, camera)
     if (!tmp.raycaster.ray.intersectPlane(tmp.plane, tmp.cursorPt)) tmp.cursorPt.set(0, 1.6, 2)
-    const wCam = window4(p, 0.21, 0.26, 0.39, 0.43)
+    const wCam = window4(p, 0.15, 0.21, 0.39, 0.43) // watches it fly in, then works it
     const wEdit = window4(p, 0.45, 0.49, 0.6, 0.64)
     tmp.want.copy(tmp.cursorPt).lerp(anchors.monitor, wCam).lerp(anchors.editCursor, wEdit)
     const k = 1 - Math.exp(-6 * dt)
