@@ -66,7 +66,9 @@ scroll and camera drift.
   To swap in another avatar, replace the file: any Mixamo-named skeleton works
   (prefixes like `mixamorig` and suffixes like `_66` are ignored), in any rest
   pose. Wardrobe colour tweaks live in `LOOK` in `Humanoid.jsx`, keyed by
-  material name.
+  material name; the trousers are re-cut wide-leg at load by
+  `oversizePants()` in `scene/wardrobe.js` (thigh/hem radius and hem drop
+  are its options).
 - `public/models/xbot-anims.glb` — the `idle`, `agree` and `headShake` Mixamo
   clips on the X Bot skeleton, mesh stripped (`scripts/optimize-model.mjs`).
   `Humanoid.jsx` plays them on this invisible rig and retargets them onto the

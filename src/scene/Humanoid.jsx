@@ -16,6 +16,7 @@ import {
 } from 'three'
 import { state } from '../lib/state'
 import { anchors } from '../lib/anchors'
+import { oversizePants } from './wardrobe'
 import { damp, ease, window4 } from '../lib/math'
 
 // Any avatar with a Mixamo-named skeleton (prefixes/suffixes are ignored).
@@ -23,11 +24,12 @@ import { damp, ease, window4 } from '../lib/math'
 const AVATAR = '/models/avatar.glb'
 const MOTION = '/models/xbot-anims.glb' // Mixamo clips on the X Bot skeleton
 const additiveReady = new WeakSet()
-// Wardrobe tweaks toward the reference sheet (black hoodie, clear frames).
+// Wardrobe tweaks toward the reference sheet (black hoodie, clear frames);
+// the trousers are also re-cut wide-leg in ./wardrobe.js.
 // Keyed by material name; colours multiply the original textures.
 const LOOK = {
   Wolf3D_Outfit_Top: (m) => ({ color: m.color.clone().setHex(0x2e2d30), roughness: 0.9 }),
-  Wolf3D_Outfit_Bottom: (m) => ({ color: m.color.clone().setHex(0x55555c) }),
+  Wolf3D_Outfit_Bottom: (m) => ({ color: m.color.clone().setHex(0x38383d), roughness: 0.95 }),
   Wolf3D_Glasses: (m) => ({ color: m.color.clone().setHex(0xe9eef2), transparent: true, opacity: 0.6, roughness: 0.15 }),
 }
 
@@ -213,6 +215,7 @@ export default function Humanoid() {
       o.material.envMapIntensity = 0.7
       const look = LOOK[o.material.name]
       if (look) Object.assign(o.material, look(o.material))
+      if (o.material.name === 'Wolf3D_Outfit_Bottom') oversizePants(o)
     })
   }, [scene])
 
