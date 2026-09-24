@@ -390,10 +390,8 @@ export default function Timeline() {
     playhead.current.position.x = e.ph
     const under = CLIPS.find((cl) => cl.track === 'V1' && e.ph >= cl.x0 && e.ph <= cl.x1)
     const map = viewerMaps[under ? under.still : 0]
-    if (viewer.current.material.map !== map) {
-      viewer.current.material.map = map
-      viewer.current.material.needsUpdate = true
-    }
+    // Same shader either way (always a map), so no recompile on the swap.
+    if (viewer.current.material.map !== map) viewer.current.material.map = map
     scratch.tint.setRGB(1, 1, 1).lerp(scratch.warm, e.grade * 0.8)
     viewer.current.material.color.copy(scratch.tint)
     puck.current.position.set(-1.72 + 0.07 * e.grade, 0.86 + 0.07 * e.grade, 0.012)
@@ -518,16 +516,7 @@ export default function Timeline() {
           <planeGeometry args={[X1 - X0, 0.003]} />
           <meshBasicMaterial color="#4a4843" toneMapped={false} />
         </mesh>
-        {Array.from({ length: 85 }, (_, k) => {
-          const x = X0 + (k / 84) * (X1 - X0)
-          const major = k % 12 === 0
-          return (
-            <mesh key={k} position={[x, RULER_Y - 0.06 + (major ? 0.03 : 0.012), 0]}>
-              <planeGeometry args={[0.004, major ? 0.06 : 0.024]} />
-              <meshBasicMaterial color={major ? '#8d8a84' : '#4a4843'} toneMapped={false} />
-            </mesh>
-          )
-        })}
+        <RulerTicks />
         {Array.from({ length: 8 }, (_, k) => (
           <Label key={k} position={[X0 + (k / 7) * (X1 - X0) + 0.015, RULER_Y + 0.03, 0]} size={0.028} color="#6f6c66">
             {`00:${String(k * 8).padStart(2, '0')}`}
@@ -621,6 +610,39 @@ export default function Timeline() {
         <meshBasicMaterial color="#ffd6a8" transparent toneMapped={false} depthWrite={false} />
       </mesh>
     </group>
+  )
+}
+
+/** Ruler ticks: two instanced draws (minor and major) instead of 85 meshes. */
+function RulerTicks() {
+  const minor = useRef()
+  const major = useRef()
+  useLayoutEffect(() => {
+    const o = new Object3D()
+    let mi = 0
+    let ma = 0
+    for (let k = 0; k < 85; k++) {
+      const isMajor = k % 12 === 0
+      o.position.set(X0 + (k / 84) * (X1 - X0), RULER_Y - 0.06 + (isMajor ? 0.03 : 0.012), 0)
+      o.scale.set(0.004, isMajor ? 0.06 : 0.024, 1)
+      o.updateMatrix()
+      if (isMajor) major.current.setMatrixAt(ma++, o.matrix)
+      else minor.current.setMatrixAt(mi++, o.matrix)
+    }
+    minor.current.instanceMatrix.needsUpdate = true
+    major.current.instanceMatrix.needsUpdate = true
+  }, [])
+  return (
+    <>
+      <instancedMesh ref={minor} args={[null, null, 85 - 8]}>
+        <planeGeometry />
+        <meshBasicMaterial color="#4a4843" toneMapped={false} />
+      </instancedMesh>
+      <instancedMesh ref={major} args={[null, null, 8]}>
+        <planeGeometry />
+        <meshBasicMaterial color="#8d8a84" toneMapped={false} />
+      </instancedMesh>
+    </>
   )
 }
 
