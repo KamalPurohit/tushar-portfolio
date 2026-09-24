@@ -5,17 +5,12 @@ import {
   AdditiveAnimationBlendMode,
   AnimationMixer,
   AnimationUtils,
-  Color,
   Euler,
   LoopOnce,
-  Mesh,
   MathUtils,
-  MeshPhysicalMaterial,
-  MeshStandardMaterial,
   Plane,
   Quaternion,
   Raycaster,
-  SphereGeometry,
   Vector2,
   Vector3,
 } from 'three'
@@ -23,9 +18,20 @@ import { state } from '../lib/state'
 import { anchors } from '../lib/anchors'
 import { damp, ease, window4 } from '../lib/math'
 
-const MODEL = '/models/xbot.glb'
+// Any avatar with a Mixamo-named skeleton (prefixes/suffixes are ignored).
+// Current: "ZACK" by Vicky on Sketchfab, CC BY 4.0 — credited in the footer.
+const AVATAR = '/models/avatar.glb'
+const MOTION = '/models/xbot-anims.glb' // Mixamo clips on the X Bot skeleton
 const additiveReady = new WeakSet()
-const EYE_FORWARD_CM = 5.6
+// Wardrobe tweaks toward the reference sheet (black hoodie, clear frames).
+// Keyed by material name; colours multiply the original textures.
+const LOOK = {
+  Wolf3D_Outfit_Top: (m) => ({ color: m.color.clone().setHex(0x2e2d30), roughness: 0.9 }),
+  Wolf3D_Outfit_Bottom: (m) => ({ color: m.color.clone().setHex(0x55555c) }),
+  Wolf3D_Glasses: (m) => ({ color: m.color.clone().setHex(0xe9eef2), transparent: true, opacity: 0.6, roughness: 0.15 }),
+}
+
+const EYE_RANGE = 0.35 // radians the eyes may turn beyond the head
 
 /* ---- bone helpers ------------------------------------------------------ */
 
@@ -34,6 +40,8 @@ const _q2 = new Quaternion()
 const _v1 = new Vector3()
 const _v2 = new Vector3()
 const _v3 = new Vector3()
+const _turn = new Quaternion()
+const _identity = new Quaternion()
 
 /** Apply a world-space rotation to a bone, whatever its local axes are. */
 function rotateBoneWorld(bone, worldRotation) {
@@ -89,15 +97,97 @@ function reach(upper, lower, hand, target, pole, weight) {
   lower.updateMatrixWorld(true)
 }
 
+/* ---- retargeting ------------------------------------------------------- */
+
+/** Bone name without a `mixamorig` prefix or an exporter's `_123` suffix. */
+const boneKey = (name) => name.replace(/^mixamorig:?/, '').replace(/_\d+$/, '')
+
+function findBone(root, key) {
+  let found = null
+  root.traverse((o) => {
+    if (!found && o.isBone && boneKey(o.name) === key) found = o
+  })
+  return found
+}
+
+// Which child a bone "points at" when it has several (spine → neck, not arms).
+const AIM_CHILD = ['Spine', 'Spine1', 'Spine2', 'Neck', 'Head', 'HeadTop_End', 'HandMiddle1']
+function aimChild(bone) {
+  const kids = bone.children.filter((c) => c.isBone)
+  return (
+    kids.find((c) => AIM_CHILD.some((k) => boneKey(c.name).endsWith(k))) ?? kids[0] ?? null
+  )
+}
+
+/**
+ * Drives `target` (the avatar) from `source` (the X Bot playing Mixamo clips).
+ *
+ * The rigs share bone names but neither bone axes nor rest pose: the X Bot
+ * rests in a T-pose, most avatar exports (Ready Player Me, Avaturn…) in an
+ * A-pose. So local rotations can't be copied. Instead, at setup each target
+ * bone's rest orientation is first swung so the bone points the same way as
+ * its source counterpart at rest ("virtually T-posing" it); then every frame
+ * the source bone's world rotation relative to its rest is applied on top,
+ * parents first.
+ */
+function createRetarget(source, target) {
+  source.updateMatrixWorld(true)
+  target.updateMatrixWorld(true)
+  const wp = (o) => o.getWorldPosition(new Vector3())
+  const pairs = []
+  target.traverse((t) => {
+    if (!t.isBone) return
+    const key = boneKey(t.name)
+    const s = findBone(source, key)
+    if (!s) return
+    const tRest = t.getWorldQuaternion(new Quaternion())
+    const tChild = aimChild(t)
+    const sChild = tChild && findBone(source, boneKey(tChild.name))
+    if (tChild && sChild) {
+      const tDir = wp(tChild).sub(wp(t)).normalize()
+      const sDir = wp(sChild).sub(wp(s)).normalize()
+      if (tDir.lengthSq() > 0 && sDir.lengthSq() > 0) {
+        tRest.premultiply(new Quaternion().setFromUnitVectors(tDir, sDir))
+      }
+    }
+    pairs.push({ s, t, sRestInv: s.getWorldQuaternion(new Quaternion()).invert(), tRest })
+  })
+  // traverse() is parent-first, so each parent is posed before its children.
+  const hips = pairs.find((p) => boneKey(p.t.name) === 'Hips')
+  const sHipRest = hips && wp(hips.s)
+  const tHipRest = hips && wp(hips.t)
+  const hipScale = hips ? tHipRest.y / sHipRest.y : 1
+  const q = new Quaternion()
+  const parentQ = new Quaternion()
+  const hip = new Vector3()
+  return function apply() {
+    source.updateMatrixWorld(true)
+    if (hips) {
+      // Carry the idle's weight shift, in world space, scaled to the avatar.
+      hips.s.getWorldPosition(hip).sub(sHipRest).multiplyScalar(hipScale).add(tHipRest)
+      hips.t.position.copy(hips.t.parent.worldToLocal(hip))
+      hips.t.updateMatrixWorld()
+    }
+    for (const { s, t, sRestInv, tRest } of pairs) {
+      s.getWorldQuaternion(q).multiply(sRestInv).multiply(tRest)
+      t.parent.getWorldQuaternion(parentQ)
+      t.quaternion.copy(parentQ.invert().multiply(q))
+      t.updateMatrixWorld()
+    }
+    target.updateMatrixWorld(true)
+  }
+}
+
 /* ---- component --------------------------------------------------------- */
 
 export default function Humanoid() {
   const root = useRef()
-  const { scene, animations } = useGLTF(MODEL)
+  const { scene } = useGLTF(AVATAR)
+  const { scene: source, animations } = useGLTF(MOTION)
   const camera = useThree((s) => s.camera)
 
   const rig = useMemo(() => {
-    const bone = (n) => scene.getObjectByName(`mixamorig${n}`)
+    const bone = (n) => findBone(scene, n)
     return {
       hips: bone('Hips'),
       spine: bone('Spine2'),
@@ -110,66 +200,34 @@ export default function Humanoid() {
     }
   }, [scene])
 
-  // Sculptural finish: warm ceramic shell over dark gunmetal joints.
+  // Keep the avatar's own textures; just let it take part in the lighting.
   useEffect(() => {
-    const shell = new MeshPhysicalMaterial({
-      color: new Color('#bdb6ab'),
-      roughness: 0.42,
-      metalness: 0.05,
-      clearcoat: 0.35,
-      clearcoatRoughness: 0.4,
-      sheen: 0.4,
-      sheenColor: new Color('#ffd9b0'),
-    })
-    const joints = new MeshStandardMaterial({
-      color: new Color('#26231f'),
-      roughness: 0.3,
-      metalness: 0.75,
-    })
     scene.traverse((o) => {
       if (!o.isMesh) return
       o.castShadow = true
-      o.receiveShadow = true
+      // Self-shadowing on skinned skin/cloth shows up as acne; the floor
+      // still receives the figure's shadow.
+      o.receiveShadow = false
       o.frustumCulled = false
-      o.material = o.name.includes('Joints') ? joints : shell
+      if (!o.material) return
+      o.material.envMapIntensity = 0.7
+      const look = LOOK[o.material.name]
+      if (look) Object.assign(o.material, look(o.material))
     })
-    return () => {
-      shell.dispose()
-      joints.dispose()
-    }
   }, [scene])
 
-  // Eyes: small lacquered lenses parented to the rig's eye bones, so they
-  // ride every head movement and can still be aimed on their own.
-  const eyes = useMemo(() => {
-    const mat = new MeshPhysicalMaterial({
-      color: '#050505',
-      roughness: 0.14,
-      metalness: 0.2,
-      clearcoat: 1,
-      clearcoatRoughness: 0.12,
-    })
-    const geo = new SphereGeometry(1.25, 24, 16) // bone space is centimetres
-    return [rig.eyeL, rig.eyeR].filter(Boolean).map((bone) => {
-      const m = new Mesh(geo, mat)
-      m.scale.set(1.1, 0.75, 0.45)
-      m.userData.placed = false
-      bone.add(m)
-      return m
-    })
-  }, [rig])
-  useEffect(
-    () => () => {
-      for (const m of eyes) {
-        m.removeFromParent()
-        m.geometry.dispose()
-        m.material.dispose()
-      }
-    },
-    [eyes],
-  )
+  const retarget = useMemo(() => createRetarget(source, scene), [source, scene])
 
-  const mixer = useMemo(() => new AnimationMixer(scene), [scene])
+  // Eyes: the avatar's own eye bones, aimed independently of the head.
+  const eyes = useMemo(() => {
+    scene.updateMatrixWorld(true)
+    return [rig.eyeL, rig.eyeR].filter(Boolean).map((bone) => ({
+      bone,
+      restInv: bone.getWorldQuaternion(new Quaternion()).invert(),
+    }))
+  }, [scene, rig])
+
+  const mixer = useMemo(() => new AnimationMixer(source), [source])
   const gestures = useRef({})
   useEffect(() => {
     const clip = (n) => animations.find((a) => a.name === n)
@@ -236,6 +294,7 @@ export default function Humanoid() {
     if (!g) return
 
     mixer.update(dt)
+    retarget()
 
     // Gesture cues when entering a chapter.
     const ch = p < 0.64 ? 'early' : p < 0.84 ? 'social' : 'contact'
@@ -289,16 +348,17 @@ export default function Humanoid() {
       rotateBoneWorld(bone, tmp.qWorld)
     }
 
-    for (const e of eyes) {
-      // First frame: push each eye forward out of the skull, along the
-      // direction the body faces, expressed in the eye bone's own space.
-      if (!e.userData.placed) {
-        e.parent.getWorldQuaternion(_q1)
-        _v1.set(0, 0, 1).applyQuaternion(tmp.rootQ).applyQuaternion(_q1.invert())
-        e.position.copy(_v1.multiplyScalar(EYE_FORWARD_CM))
-        e.userData.placed = true
-      }
-      e.lookAt(tmp.look)
+    // Eyes: find where each eye currently points (rest looked down +z),
+    // then turn it toward the target, capped so they never roll back.
+    for (const { bone, restInv } of eyes) {
+      bone.getWorldQuaternion(_q1).multiply(restInv)
+      _v1.set(0, 0, 1).applyQuaternion(_q1)
+      bone.getWorldPosition(_v2)
+      _v3.subVectors(tmp.look, _v2).normalize()
+      const angle = _v1.angleTo(_v3)
+      _turn.setFromUnitVectors(_v1, _v3)
+      if (angle > EYE_RANGE) _turn.slerp(_identity, 1 - EYE_RANGE / angle)
+      rotateBoneWorld(bone, _turn)
     }
 
     // Hands onto the camera rig: right on the handgrip, left on the lens.
@@ -316,4 +376,5 @@ export default function Humanoid() {
   )
 }
 
-useGLTF.preload(MODEL)
+useGLTF.preload(AVATAR)
+useGLTF.preload(MOTION)

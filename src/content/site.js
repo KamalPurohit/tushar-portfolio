@@ -354,3 +354,12 @@ export const socials = [
     blurb: 'Branded work for Google, Meesho, Flipkart and Prime Video.',
   },
 ]
+
+/* The 3D figure is a stand-in avatar; CC BY 4.0 requires this credit to stay
+   visible while it's used. Remove it if the model is replaced. */
+export const avatarCredit = {
+  text: '3D character “ZACK” by Vicky',
+  href: 'https://sketchfab.com/3d-models/zack-c45c8c6eaa584f7e96baf44d64abbc96',
+  license: 'CC BY 4.0',
+  licenseHref: 'https://creativecommons.org/licenses/by/4.0/',
+}

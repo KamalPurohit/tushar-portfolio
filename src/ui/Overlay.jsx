@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { motion, useMotionValueEvent, useScroll, useTransform } from 'framer-motion'
 import { CHAPTERS, chapterAt } from '../lib/chapters'
 import { scrollToChapter } from '../lib/scroll'
-import { brands, film, mailto, meta, projects } from '../content/site'
+import { avatarCredit, brands, film, mailto, meta, projects } from '../content/site'
 
 /* Everything readable sits in the DOM, above the canvas: fixed layers whose
    opacity and drift are driven by the same scroll progress as the film. */
@@ -227,6 +227,18 @@ function Contact({ progress }) {
       </div>
       <p className="contact__foot mono">
         © {new Date().getFullYear()} {meta.name} — shot, cut &amp; delivered from {meta.location}
+        {avatarCredit && (
+          <>
+            {' · '}
+            <a href={avatarCredit.href} target="_blank" rel="noreferrer">
+              {avatarCredit.text}
+            </a>
+            {', '}
+            <a href={avatarCredit.licenseHref} target="_blank" rel="noreferrer">
+              {avatarCredit.license}
+            </a>
+          </>
+        )}
       </p>
     </motion.section>
   )
