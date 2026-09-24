@@ -265,3 +265,92 @@ export const contact = {
     'Want to know more about me, tell me about your project, or just to say ' +
     'hello? Drop me a line and I’ll get back as soon as possible.',
 }
+
+/* ----------------------------------------------------------------------------
+   3D film copy — one block per chapter.
+   ------------------------------------------------------------------------- */
+
+export const film = {
+  hero: {
+    roles: ['Cinematographer', 'Filmmaker', 'Video Editor'],
+    line: 'I turn moments into moving images.',
+  },
+  cinematographer: {
+    title: 'Cinematographer',
+    line: 'Framing stories through light, movement and perspective.',
+    notes: ['Music videos', 'Podcasts', 'Live events', 'Branded films'],
+  },
+  editor: {
+    title: 'Video Editor',
+    line: 'Shaping raw footage into rhythm, emotion and story.',
+    notes: ['Edit', 'Colour grade', 'Finish', 'Long & short form'],
+  },
+  social: {
+    title: 'Content & Social',
+    line: 'Creating visuals that connect beyond the frame.',
+  },
+  contact: {
+    title: "Let's make something",
+    titleAccent: 'worth watching.',
+  },
+}
+
+/* Floating 3D icons in the Content & Social chapter.
+   Only Instagram is a confirmed profile — the rest describe the kind of work
+   made for each platform. Add an `href` to make an icon clickable. */
+export const socials = [
+  {
+    id: 'instagram',
+    name: 'Instagram',
+    color: '#e4405f',
+    href: 'https://www.instagram.com/nottusharr/',
+    handle: '@nottusharr',
+    preview: '/thumbnail/insta1.jpg',
+    blurb: 'Reels for Solo, Ather and Powered by Ada — shot and cut in-house.',
+  },
+  {
+    id: 'youtube',
+    name: 'YouTube',
+    color: '#ff3b30',
+    href: 'https://www.youtube.com/watch?v=8evvtkCSQHY',
+    handle: 'Long-form',
+    preview: 'https://img.youtube.com/vi/8evvtkCSQHY/hqdefault.jpg',
+    blurb: 'Helped grow a Kannada podcast from 0 to 75,000+ subscribers.',
+  },
+  {
+    id: 'tiktok',
+    name: 'TikTok',
+    color: '#25f4ee',
+    href: '',
+    handle: 'Vertical-first',
+    preview: '/thumbnail/insta3.jpg',
+    blurb: 'Hook-first vertical edits built for the scroll.',
+  },
+  {
+    id: 'facebook',
+    name: 'Facebook',
+    color: '#1877f2',
+    href: '',
+    handle: 'Pages & campaigns',
+    preview: '/thumbnail/insta4.jpg',
+    blurb: 'Creative for ScoopWhoop, OkTested and AdParody audiences.',
+  },
+  {
+    id: 'x',
+    name: 'X',
+    color: '#e7e7e7',
+    href: '',
+    handle: 'Clips & cutdowns',
+    preview: '/thumbnail/insta5.jpg',
+    blurb: 'Fast cutdowns that land in a single autoplay.',
+  },
+  {
+    id: 'linkedin',
+    name: 'LinkedIn',
+    color: '#0a66c2',
+    href: '',
+    handle: 'Brand films',
+    preview: '/thumbnail/insta6.jpg',
+    blurb: 'Branded work for Google, Meesho, Flipkart and Prime Video.',
+  },
+]
