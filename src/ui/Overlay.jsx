@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { motion, useMotionValueEvent, useScroll, useTransform } from 'framer-motion'
-import { CHAPTERS, chapterAt } from '../lib/chapters'
+import { CHAPTERS, STORY_END, chapterAt } from '../lib/chapters'
 import { scrollToChapter } from '../lib/scroll'
-import { avatarCredit, brands, film, mailto, meta, projects } from '../content/site'
+import { avatarCredit, film, mailto, meta, projects } from '../content/site'
 
 /* Everything readable sits in the DOM, above the canvas: fixed layers whose
    opacity and drift are driven by the same scroll progress as the film. */
@@ -40,7 +40,7 @@ function TopBar({ progress }) {
 }
 
 function Rail({ progress }) {
-  const scaleY = useTransform(progress, [0, 1], [0, 1])
+  const scaleY = useTransform(progress, [0, STORY_END], [0, 1])
   return (
     <nav className="rail" aria-label="Chapters">
       <div className="rail__track">
@@ -50,7 +50,7 @@ function Rail({ progress }) {
         <button
           key={c.id}
           className="rail__tick"
-          style={{ top: `${c.start * 100}%` }}
+          style={{ top: `${(c.start / STORY_END) * 100}%` }}
           onClick={() => scrollToChapter(c.id)}
           aria-label={`${c.index} ${c.label}`}
         >
@@ -81,6 +81,7 @@ function Hud({ progress }) {
           cinematographer: '35MM · T2.1 · 172.8°',
           editor: 'TIMELINE · 23.976 FPS',
           social: '24MM · T2.8 · ISO 1280',
+          work: 'SCREEN · 5K · 60 HZ',
           contact: '85MM · T1.8 · ISO 640',
         }[c]
         if (lens.current.textContent !== text) lens.current.textContent = text
@@ -175,13 +176,48 @@ function Chapter({ progress, range, index, title, line, notes, align = 'left' })
   )
 }
 
+/** The Work: the monitor carries the portfolio; this is the caption and
+ *  the clickable way into it. */
+function Work({ progress }) {
+  const beat = useBeat(progress, [0.915, 0.945, 0.985, 0.998])
+  return (
+    <motion.section className="work" style={beat} aria-labelledby="work-title">
+      <p className="eyebrow mono">
+        05 <span className="eyebrow__rule" /> The Work
+      </p>
+      <h2 id="work-title" className="work__title">
+        {film.work.title} <span className="serif">{film.work.titleAccent}</span>
+      </h2>
+      <ul className="work__links mono">
+        {projects.map((p) => (
+          <li key={p.youtubeId}>
+            <a href={p.href} target="_blank" rel="noreferrer">
+              {p.title.split(':')[0]} ↗
+            </a>
+          </li>
+        ))}
+        <li>
+          <a href={meta.instagram} target="_blank" rel="noreferrer">
+            Reels on Instagram ↗
+          </a>
+        </li>
+        <li>
+          <a href={meta.moreWorkUrl} target="_blank" rel="noreferrer">
+            Full work list ↗
+          </a>
+        </li>
+      </ul>
+    </motion.section>
+  )
+}
+
 function Contact({ progress }) {
-  const beat = useBeat(progress, [0.87, 0.93, 0.999, 1], { to: 1 })
+  const beat = useBeat(progress, [1.03, 1.09, STORY_END - 0.001, STORY_END], { to: 1 })
   return (
     <motion.section className="contact" style={beat} id="contact" aria-labelledby="contact-title">
       <div className="contact__main">
         <p className="eyebrow mono">
-          05 <span className="eyebrow__rule" /> The Story
+          06 <span className="eyebrow__rule" /> The Story
         </p>
         <h2 id="contact-title" className="contact__title">
           {film.contact.title} <span className="serif">{film.contact.titleAccent}</span>
@@ -210,21 +246,6 @@ function Contact({ progress }) {
           </li>
         </ul>
       </div>
-      <div className="credits">
-        <p className="eyebrow mono">Selected work</p>
-        <ol>
-          {projects.map((p) => (
-            <li key={p.youtubeId}>
-              <a href={p.href} target="_blank" rel="noreferrer">
-                <span className="credits__title">{p.title}</span>
-                <span className="credits__meta mono">{p.tags.join(' · ')}</span>
-              </a>
-            </li>
-          ))}
-        </ol>
-        <p className="eyebrow mono credits__brands-label">Worked with</p>
-        <p className="credits__brands">{brands.map((b) => b.name).join('  ·  ')}</p>
-      </div>
       <p className="contact__foot mono">
         © {new Date().getFullYear()} {meta.name} — shot, cut &amp; delivered from {meta.location}
         {avatarCredit && (
@@ -245,7 +266,9 @@ function Contact({ progress }) {
 }
 
 export default function Overlay() {
-  const { scrollYProgress: progress } = useScroll()
+  // Everything below is keyed to story time (see lib/chapters).
+  const { scrollYProgress } = useScroll()
+  const progress = useTransform(scrollYProgress, (s) => s * STORY_END)
   return (
     <div className="overlay">
       <Letterbox progress={progress} />
@@ -278,6 +301,7 @@ export default function Overlay() {
         line={film.social.line}
         notes={['Hover an icon', 'Scroll to scatter']}
       />
+      <Work progress={progress} />
       <Contact progress={progress} />
     </div>
   )

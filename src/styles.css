@@ -402,9 +402,8 @@ button {
 
 .contact {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 620px);
   grid-template-rows: 1fr auto;
-  column-gap: 26vw;
   align-items: end;
   padding: 16vh var(--gutter) 10vh;
   background: radial-gradient(40% 70% at 50% 55%, transparent, rgba(5, 5, 5, 0.55));
@@ -448,55 +447,63 @@ button {
 .contact__links a:hover {
   color: var(--warm);
 }
-.credits ol {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  counter-reset: reel;
-}
-.credits li a {
-  display: grid;
-  grid-template-columns: 34px 1fr;
-  gap: 4px 0;
-  padding: 12px 0;
-  border-top: 1px solid var(--line);
-  counter-increment: reel;
-  transition: color 0.4s var(--ease);
-}
-.credits li a::before {
-  content: counter(reel, decimal-leading-zero);
-  grid-row: span 2;
-  font-family: var(--font-mono);
-  font-size: 11px;
-  color: var(--muted);
-  padding-top: 4px;
-}
-.credits li a:hover {
-  color: var(--warm);
-}
-.credits__title {
-  font-size: clamp(15px, 1.2vw, 18px);
-  font-weight: 500;
-  letter-spacing: -0.01em;
-}
-.credits__meta {
-  font-size: 10px;
-  color: var(--muted);
-}
-.credits__brands-label {
-  margin-top: 26px;
-}
-.credits__brands {
-  margin: 0;
-  font-size: 13px;
-  line-height: 1.7;
-  color: var(--ink-soft);
-}
 .contact__foot {
   grid-column: 1 / -1;
   margin: 5vh 0 0;
   color: var(--muted);
   font-size: 10px;
+}
+
+/* ---- the work -------------------------------------------------------- */
+
+.work {
+  position: absolute;
+  left: var(--gutter);
+  right: var(--gutter);
+  bottom: 4vh;
+  padding: 16px 20px;
+  max-width: 640px;
+  border-radius: 16px;
+  background: rgba(8, 8, 9, 0.72);
+  border: 1px solid var(--line);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+.work .eyebrow {
+  margin-bottom: 10px;
+}
+.work__title {
+  margin: 0;
+  font-weight: 600;
+  font-size: clamp(22px, 2.2vw, 32px);
+  line-height: 1;
+  letter-spacing: -0.04em;
+  text-transform: uppercase;
+}
+.work__title .serif {
+  color: var(--warm);
+  font-size: 0.8em;
+  letter-spacing: -0.01em;
+}
+.work__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.work__links a {
+  display: inline-block;
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--ink-soft);
+  transition: border-color 0.3s var(--ease), color 0.3s var(--ease);
+}
+.work__links a:hover {
+  border-color: var(--warm);
+  color: var(--warm);
 }
 
 /* ---- 3D social cards (drei <Html>) ------------------------------------ */
@@ -704,10 +711,14 @@ button {
   .contact__email {
     margin-top: 18px;
   }
-  .credits li:nth-child(n + 3),
-  .credits__brands,
-  .credits__brands-label {
-    display: none;
+  .work {
+    left: 12px;
+    right: 12px;
+    bottom: 4vh;
+    padding: 18px;
+  }
+  .work__links {
+    gap: 6px;
   }
   .contact__foot {
     margin: 0;

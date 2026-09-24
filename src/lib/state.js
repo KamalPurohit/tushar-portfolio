@@ -7,7 +7,7 @@ const coarse =
 const narrow = typeof window !== 'undefined' && window.innerWidth < 820
 
 export const state = {
-  /** Raw scroll progress, 0 → 1 across the whole film. */
+  /** Raw scroll progress in story time, 0 → STORY_END (lib/chapters). */
   target: 0,
   /** Damped scroll progress — what every scene reads. */
   progress: 0,

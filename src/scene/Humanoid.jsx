@@ -17,6 +17,7 @@ import {
 import { state } from '../lib/state'
 import { anchors } from '../lib/anchors'
 import { oversizePants } from './wardrobe'
+import { DESK, seated } from './WorkDesk'
 import { damp, ease, window4 } from '../lib/math'
 
 // Any avatar with a Mixamo-named skeleton (prefixes/suffixes are ignored).
@@ -268,6 +269,51 @@ function curlFingers(h, angle) {
   }
 }
 
+/* ---- sitting ------------------------------------------------------------ */
+
+const _seat = new Vector3()
+const _hip = new Vector3()
+const _lean = new Quaternion()
+const _footQ = new Quaternion()
+const _xAxis = new Vector3()
+const _pole = new Vector3()
+
+/** Lower him into the desk chair: hips onto the seat, feet planted (leg IK,
+ *  feet kept flat), and a slight lean in toward the desk. `root` is his
+ *  root group; all targets are in its space. */
+function sitDown(rig, root, w) {
+  if (w < 0.002 || !rig.hips) return
+  root.localToWorld(_seat.copy(DESK.hips))
+  rig.hips.getWorldPosition(_hip).lerp(_seat, w)
+  rig.hips.position.copy(rig.hips.parent.worldToLocal(_hip))
+  rig.hips.updateMatrixWorld(true)
+
+  root.getWorldQuaternion(_lean)
+  _xAxis.set(1, 0, 0).applyQuaternion(_lean)
+  if (rig.spineLow) rotateBoneWorld(rig.spineLow, _lean.setFromAxisAngle(_xAxis, 0.16 * w))
+
+  _pole.set(0, 0.5, 1).applyQuaternion(root.quaternion)
+  for (const [leg, foot] of [
+    [rig.legL, DESK.footL],
+    [rig.legR, DESK.footR],
+  ]) {
+    const [up, knee, ankle] = leg
+    if (!up || !knee || !ankle) continue
+    ankle.getWorldQuaternion(_footQ)
+    reach(up, knee, ankle, root.localToWorld(_hip.copy(foot)), _pole, w)
+    // Keep the foot's own (flat) orientation through the knee bend.
+    ankle.parent.getWorldQuaternion(_lean)
+    ankle.quaternion.copy(_lean.invert().multiply(_footQ))
+    ankle.updateMatrixWorld(true)
+  }
+}
+
+const _deskWristR = new Vector3()
+const _deskWristL = new Vector3()
+const _deskFingers = new Vector3()
+const _deskPalm = new Vector3()
+const _deskScreen = new Vector3()
+
 /* ---- component --------------------------------------------------------- */
 
 export default function Humanoid() {
@@ -287,6 +333,9 @@ export default function Humanoid() {
       eyeR: bone('RightEye'),
       armR: [bone('RightArm'), bone('RightForeArm'), bone('RightHand')],
       armL: [bone('LeftArm'), bone('LeftForeArm'), bone('LeftHand')],
+      spineLow: bone('Spine1'),
+      legR: [bone('RightUpLeg'), bone('RightLeg'), bone('RightFoot')],
+      legL: [bone('LeftUpLeg'), bone('LeftLeg'), bone('LeftFoot')],
       handR: handRig(bone, 'Right'),
       handL: handRig(bone, 'Left'),
     }
@@ -389,7 +438,7 @@ export default function Humanoid() {
     mixer.update(dt)
 
     // Gesture cues when entering a chapter.
-    const ch = p < 0.64 ? 'early' : p < 0.84 ? 'social' : 'contact'
+    const ch = p < 0.64 ? 'early' : p < 0.84 ? 'social' : p < 1.0 ? 'work' : 'contact'
     if (ch !== tmp.lastChapter) {
       if (ch === 'social' || ch === 'contact') play('agree', 0.9)
       tmp.lastChapter = ch
@@ -401,12 +450,14 @@ export default function Humanoid() {
       -0.22 * ease(p, 0.2, 0.27) +
       (-Math.PI + 0.22) * ease(p, 0.41, 0.48) +
       Math.PI * ease(p, 0.6, 0.67)
-    const facingFront = 1 - window4(p, 0.4, 0.46, 0.61, 0.67)
+    const sit = seated(p)
+    const facingFront = (1 - window4(p, 0.4, 0.46, 0.61, 0.67)) * (1 - sit)
     tmp.yaw = damp(tmp.yaw, bodyYaw + state.pointer.x * 0.1 * facingFront, 4, dt)
     g.rotation.y = tmp.yaw
     g.updateMatrixWorld(true)
     // Pose the avatar from the clips now that its root faces the right way.
     retarget()
+    sitDown(rig, g, sit)
 
     // What the eyes want to look at: the cursor, the camera's monitor, or
     // the edit cursor on the timeline — cross-faded by chapter.
@@ -415,7 +466,12 @@ export default function Humanoid() {
     if (!tmp.raycaster.ray.intersectPlane(tmp.plane, tmp.cursorPt)) tmp.cursorPt.set(0, 1.6, 2)
     const wCam = window4(p, 0.15, 0.21, 0.39, 0.43) // watches it fly in, then works it
     const wEdit = window4(p, 0.45, 0.49, 0.6, 0.64)
-    tmp.want.copy(tmp.cursorPt).lerp(anchors.monitor, wCam).lerp(anchors.editCursor, wEdit)
+    g.localToWorld(_deskScreen.copy(DESK.screen))
+    tmp.want
+      .copy(tmp.cursorPt)
+      .lerp(anchors.monitor, wCam)
+      .lerp(anchors.editCursor, wEdit)
+      .lerp(_deskScreen, sit)
     const k = 1 - Math.exp(-6 * dt)
     tmp.look.lerp(tmp.want, k)
 
@@ -466,6 +522,21 @@ export default function Humanoid() {
     orientHand(rig.handL, anchors.fingersLeft, anchors.palmLeft, hold)
     curlFingers(rig.handR, 1.1 * hold)
     curlFingers(rig.handL, 1.1 * hold)
+
+    // At the desk: right hand on the mouse, left on the keyboard.
+    const typing = ease(p, 0.87, 0.91)
+    if (typing > 0.002) {
+      g.localToWorld(_deskWristR.copy(DESK.wristR))
+      g.localToWorld(_deskWristL.copy(DESK.wristL))
+      _deskFingers.copy(DESK.fingers).applyQuaternion(tmp.rootQ)
+      _deskPalm.copy(DESK.palm).applyQuaternion(tmp.rootQ)
+      reach(...rig.armR, _deskWristR, tmp.poleR, typing)
+      reach(...rig.armL, _deskWristL, tmp.poleL, typing)
+      orientHand(rig.handR, _deskFingers, _deskPalm, typing)
+      orientHand(rig.handL, _deskFingers, _deskPalm, typing)
+      curlFingers(rig.handR, 0.3 * typing)
+      curlFingers(rig.handL, 0.22 * typing)
+    }
   })
 
   return (

@@ -1,6 +1,6 @@
 import Lenis from 'lenis'
 import { state } from './state'
-import { CHAPTERS } from './chapters'
+import { CHAPTERS, STORY_END } from './chapters'
 
 /* Smooth scroll. Lenis moves the real document scroll, so framer-motion's
    useScroll and the canvas read the same, already-smoothed value. */
@@ -12,7 +12,7 @@ const maxScroll = () => document.documentElement.scrollHeight - window.innerHeig
 export function startScroll() {
   const update = () => {
     const max = maxScroll()
-    state.target = max > 0 ? window.scrollY / max : 0
+    state.target = (max > 0 ? window.scrollY / max : 0) * STORY_END
   }
   update()
   state.progress = state.target
@@ -30,9 +30,9 @@ export function startScroll() {
   }
 }
 
-/** Jump to a point in the film (0 → 1). */
+/** Jump to a point in story time (0 → STORY_END). */
 export function scrollToProgress(p) {
-  const y = p * maxScroll()
+  const y = (p / STORY_END) * maxScroll()
   if (lenis) lenis.scrollTo(y, { duration: 2.2 })
   else window.scrollTo({ top: y, behavior: state.reducedMotion ? 'auto' : 'smooth' })
 }
@@ -41,6 +41,6 @@ export function scrollToProgress(p) {
 export function scrollToChapter(id) {
   const c = CHAPTERS.find((ch) => ch.id === id)
   if (!c) return
-  const settle = { hero: 0, cinematographer: 0.3, editor: 0.54, social: 0.74, contact: 1 }
+  const settle = { hero: 0, cinematographer: 0.3, editor: 0.54, social: 0.74, work: 0.97, contact: STORY_END }
   scrollToProgress(settle[id] ?? (c.start + c.end) / 2)
 }

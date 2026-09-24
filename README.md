@@ -2,7 +2,7 @@
 
 An interactive 3D film for Tushar KB, cinematographer, filmmaker and video
 editor based in Bangalore. Scrolling plays the film: **the person → the camera
-→ the edit → the audience → the story.**
+→ the edit → the audience → the work → the story.**
 
 Built with **Vite + React + Three.js (React Three Fiber, drei,
 postprocessing)**, Framer Motion for the typography, and Lenis for smooth
@@ -10,13 +10,17 @@ scroll. Deployed on Netlify.
 
 ## The film
 
-| Chapter | Scroll | What happens |
+| Chapter | Story time | What happens |
 |---|---|---|
-| 01 The Person | 0 – 17% | The figure under a top light, his name in 3D behind him. Head, neck, spine and eyes track the cursor; the key light pans with it. |
-| 02 The Camera | 17 – 42% | A DSLR on a 3-axis handheld gimbal flies in; he watches it arrive and takes the handle in both hands (two-bone IK, hands turned and closed into fists). The handle sways with his breathing while the gimbal holds the camera level; the view orbits him. |
-| 03 The Edit | 42 – 64% | He turns to a floating NLE: grading wheels, viewer, tools, ruler, markers, video/audio tracks. A 3D mouse drags a clip, razor-cuts another, scrubs the playhead and grades. Scroll explodes the layers in depth, then scatters the clips. |
-| 04 The Audience | 64 – 84% | Six extruded platform icons orbit him, scatter and regroup with scroll, lean toward the cursor, and open a preview card on hover (tap on touch). |
-| 05 The Story | 84 – 100% | The camera cranes back; contact details, selected work and brands. |
+| 01 The Person | 0 – 17 | The figure under a top light, his name in 3D behind him. Head, neck, spine and eyes track the cursor; the key light pans with it. |
+| 02 The Camera | 17 – 42 | A DSLR on a 3-axis handheld gimbal flies in; he watches it arrive and takes the handle in both hands (two-bone IK, hands turned and closed into fists). The handle sways with his breathing while the gimbal holds the camera level; the view orbits him. |
+| 03 The Edit | 42 – 64 | He turns to a floating NLE: grading wheels, viewer, tools, ruler, markers, video/audio tracks. A 3D mouse drags a clip, razor-cuts another, scrubs the playhead and grades. Scroll explodes the layers in depth, then scatters the clips. |
+| 04 The Audience | 64 – 84 | Six extruded platform icons orbit him, scatter and regroup with scroll, lean toward the cursor, and open a preview card on hover (tap on touch). |
+| 05 The Work | 84 – 100 | An editing desk slides in — chair, desk, ultrawide monitor, keyboard, mouse, lamp. He sits (leg IK), hands on keyboard and mouse. The camera goes side-on, over his shoulder, then past his ear while the lens widens until the monitor fills the frame: brands and pages sliding past, reels and YouTube films scrolling (`scene/workScreen.js`, painted live). A caption links to each film. |
+| 06 The Story | 100 – 116 | The camera cranes back off the desk; contact details. |
+
+Chapter ranges are in *story time* (`lib/chapters.js`), which scroll maps
+onto linearly from 0 to `STORY_END` (1.16).
 
 ## Editing the site
 
@@ -44,6 +48,8 @@ src/
     DslrCamera.jsx      procedural DSLR + gimbal, and the hand-hold targets
     Timeline.jsx        procedural editing timeline + scripted mouse
     SocialIcons.jsx     extruded platform icons + hover cards
+    WorkDesk.jsx        desk, chair, monitor, lamp; where he sits and types
+    workScreen.js       the monitor's live portfolio (canvas texture)
     Effects.jsx         DOF, bloom, grain, vignette
   ui/                   DOM overlay, custom cursor, loader
 ```
@@ -76,7 +82,10 @@ scroll and camera drift.
   X Bot's T-pose, then gets the source bone's rest-relative world rotation.
   Don't resample or quantise the clips: both corrupt them.
 - `public/fonts/inter-tight-600.ttf` — for 3D text (troika can't read the woff).
-- `public/thumbnail/` — reel stills used on the timeline, monitor and cards.
+- `public/thumbnail/` — reel stills used on the timeline, monitors and cards.
+  The desk monitor loads YouTube thumbnails from `i.ytimg.com` and falls back
+  to a reel still if they can't be loaded CORS-clean.
+- `public/brandlogos/` — brand logos and page avatars for the desk monitor.
 
 ## Commands
 

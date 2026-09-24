@@ -7,6 +7,7 @@ import Humanoid from './Humanoid'
 import DslrCamera from './DslrCamera'
 import Timeline from './Timeline'
 import SocialIcons from './SocialIcons'
+import WorkDesk from './WorkDesk'
 import Effects from './Effects'
 import Warmup from './Warmup'
 
@@ -33,6 +34,7 @@ export default function Experience() {
         <DslrCamera />
         <Timeline />
         <SocialIcons />
+        <WorkDesk />
         <Effects />
         <Warmup />
       </Suspense>

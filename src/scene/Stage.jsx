@@ -178,7 +178,7 @@ export default function Stage() {
     key.current.position.set(2.4 + scratch.pk.x * 1.6, 5 + scratch.pk.y * 0.8, 3.4)
     keyTarget.position.set(scratch.pk.x * 0.35, 1.1 + scratch.pk.y * 0.2, 0)
     keyTarget.updateMatrixWorld()
-    const contact = ease(p, 0.84, 0.95)
+    const contact = ease(p, 1.0, 1.11)
     key.current.intensity = 120 * (1 - 0.55 * contact)
 
     // Chapter colour: violet cast over the edit, pulsing brand hues for the

@@ -289,6 +289,10 @@ export const film = {
     title: 'Content & Social',
     line: 'Creating visuals that connect beyond the frame.',
   },
+  work: {
+    title: 'My work',
+    titleAccent: '— brands, reels & films.',
+  },
   contact: {
     title: "Let's make something",
     titleAccent: 'worth watching.',
