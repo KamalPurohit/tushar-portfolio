@@ -5,11 +5,13 @@ import {
   AdditiveAnimationBlendMode,
   AnimationMixer,
   AnimationUtils,
+  Color,
   Euler,
   LoopOnce,
   Mesh,
   MathUtils,
   MeshPhysicalMaterial,
+  MeshStandardMaterial,
   Plane,
   Quaternion,
   Raycaster,
@@ -21,8 +23,7 @@ import { state } from '../lib/state'
 import { anchors } from '../lib/anchors'
 import { damp, ease, window4 } from '../lib/math'
 
-const AVATAR = '/models/tushar.glb' // Avaturn export, Mixamo-named skeleton
-const MOTION = '/models/xbot-anims.glb' // Mixamo clips on the X Bot skeleton
+const MODEL = '/models/xbot.glb'
 const additiveReady = new WeakSet()
 const EYE_FORWARD_CM = 5.6
 
@@ -88,64 +89,15 @@ function reach(upper, lower, hand, target, pole, weight) {
   lower.updateMatrixWorld(true)
 }
 
-/* ---- retargeting ------------------------------------------------------- */
-
-/**
- * Drives `target` (the avatar) from `source` (the X Bot playing Mixamo clips).
- * The two rigs share bone names but not bone axes, so local rotations can't
- * be copied across. Instead each bone's world-space rotation *relative to its
- * rest pose* is transferred, parents first. Both rigs rest in a T-pose.
- */
-function createRetarget(source, target) {
-  source.updateMatrixWorld(true)
-  target.updateMatrixWorld(true)
-  const pairs = []
-  target.traverse((t) => {
-    if (!t.isBone) return
-    const s = source.getObjectByName(`mixamorig${t.name}`) ?? source.getObjectByName(t.name)
-    if (!s) return
-    pairs.push({
-      s,
-      t,
-      sRestInv: s.getWorldQuaternion(new Quaternion()).invert(),
-      tRest: t.getWorldQuaternion(new Quaternion()),
-    })
-  })
-  // traverse() is parent-first, so each parent is posed before its children.
-  const hips = pairs.find((p) => p.t.name.endsWith('Hips'))
-  const sHipRest = hips?.s.position.clone()
-  const tHipRest = hips?.t.position.clone()
-  const hipScale = hips ? tHipRest.y / sHipRest.y : 1
-  const q = new Quaternion()
-  const parentQ = new Quaternion()
-  return function apply() {
-    source.updateMatrixWorld(true)
-    for (const { s, t, sRestInv, tRest } of pairs) {
-      s.getWorldQuaternion(q).multiply(sRestInv).multiply(tRest)
-      t.parent.getWorldQuaternion(parentQ)
-      t.quaternion.copy(parentQ.invert().multiply(q))
-      t.updateMatrixWorld()
-    }
-    if (hips) {
-      // Carry the idle's weight shift, scaled to the avatar's proportions.
-      t_hip.subVectors(hips.s.position, sHipRest).multiplyScalar(hipScale)
-      hips.t.position.copy(tHipRest).add(t_hip)
-    }
-    target.updateMatrixWorld(true)
-  }
-}
-const t_hip = new Vector3()
-
 /* ---- component --------------------------------------------------------- */
 
 export default function Humanoid() {
   const root = useRef()
-  const { scene } = useGLTF(AVATAR)
-  const { scene: source, animations } = useGLTF(MOTION)
+  const { scene, animations } = useGLTF(MODEL)
   const camera = useThree((s) => s.camera)
 
   const rig = useMemo(() => {
-    const bone = (n) => scene.getObjectByName(n) ?? scene.getObjectByName(`mixamorig${n}`)
+    const bone = (n) => scene.getObjectByName(`mixamorig${n}`)
     return {
       hips: bone('Hips'),
       spine: bone('Spine2'),
@@ -158,18 +110,34 @@ export default function Humanoid() {
     }
   }, [scene])
 
-  // Keep the avatar's own textures; just let it take part in the lighting.
+  // Sculptural finish: warm ceramic shell over dark gunmetal joints.
   useEffect(() => {
+    const shell = new MeshPhysicalMaterial({
+      color: new Color('#bdb6ab'),
+      roughness: 0.42,
+      metalness: 0.05,
+      clearcoat: 0.35,
+      clearcoatRoughness: 0.4,
+      sheen: 0.4,
+      sheenColor: new Color('#ffd9b0'),
+    })
+    const joints = new MeshStandardMaterial({
+      color: new Color('#26231f'),
+      roughness: 0.3,
+      metalness: 0.75,
+    })
     scene.traverse((o) => {
       if (!o.isMesh) return
       o.castShadow = true
       o.receiveShadow = true
       o.frustumCulled = false
-      if (o.material) o.material.envMapIntensity = 0.7
+      o.material = o.name.includes('Joints') ? joints : shell
     })
+    return () => {
+      shell.dispose()
+      joints.dispose()
+    }
   }, [scene])
-
-  const retarget = useMemo(() => createRetarget(source, scene), [source, scene])
 
   // Eyes: small lacquered lenses parented to the rig's eye bones, so they
   // ride every head movement and can still be aimed on their own.
@@ -201,7 +169,7 @@ export default function Humanoid() {
     [eyes],
   )
 
-  const mixer = useMemo(() => new AnimationMixer(source), [source])
+  const mixer = useMemo(() => new AnimationMixer(scene), [scene])
   const gestures = useRef({})
   useEffect(() => {
     const clip = (n) => animations.find((a) => a.name === n)
@@ -268,7 +236,6 @@ export default function Humanoid() {
     if (!g) return
 
     mixer.update(dt)
-    retarget()
 
     // Gesture cues when entering a chapter.
     const ch = p < 0.64 ? 'early' : p < 0.84 ? 'social' : 'contact'
@@ -349,5 +316,4 @@ export default function Humanoid() {
   )
 }
 
-useGLTF.preload(AVATAR)
-useGLTF.preload(MOTION)
+useGLTF.preload(MODEL)

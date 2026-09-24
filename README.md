@@ -12,7 +12,7 @@ scroll. Deployed on Netlify.
 
 | Chapter | Scroll | What happens |
 |---|---|---|
-| 01 The Person | 0 – 17% | Tushar's avatar under a top light, his name in 3D behind him. Head, neck and spine track the cursor; the key light pans with it. |
+| 01 The Person | 0 – 17% | A mannequin under a top light, his name in 3D behind him. Head, neck, spine and eyes track the cursor; the key light pans with it. |
 | 02 The Camera | 17 – 42% | A cinema camera (PL mount, knurled lens rings, matte box, rods, follow-focus, monitor, handgrip) flies in; he watches it arrive, takes it in both hands (two-bone IK) and the view orbits the rig. |
 | 03 The Edit | 42 – 64% | He turns to a floating NLE: grading wheels, viewer, tools, ruler, markers, video/audio tracks. A 3D mouse drags a clip, razor-cuts another, scrubs the playhead and grades. Scroll explodes the layers in depth, then scatters the clips. |
 | 04 The Audience | 64 – 84% | Six extruded platform icons orbit him, scatter and regroup with scroll, lean toward the cursor, and open a preview card on hover (tap on touch). |
@@ -60,15 +60,10 @@ scroll and camera drift.
 
 ## Assets
 
-- `public/models/tushar.glb` — Tushar's avatar (Avaturn export, Mixamo-named
-  skeleton, no animations of its own). To swap in a new one, replace this file;
-  any Mixamo-compatible rig in a T-pose works.
-- `public/models/xbot-anims.glb` — the `idle`, `agree` and `headShake` Mixamo
-  clips on the X Bot skeleton (mesh stripped by `scripts/optimize-model.mjs`).
-  `Humanoid.jsx` plays them on this invisible rig and retargets every bone's
-  rest-relative world rotation onto the avatar each frame, so rigs with
-  different bone axes still move correctly. Don't resample or quantise the
-  clips: both corrupt them.
+- `public/models/xbot.glb` — Mixamo "X Bot" (via the three.js examples),
+  trimmed to the `idle`, `agree` and `headShake` clips by
+  `scripts/optimize-model.mjs`. Don't resample or quantise it: both corrupt
+  this rig's skinning.
 - `public/fonts/inter-tight-600.ttf` — for 3D text (troika can't read the woff).
 - `public/thumbnail/` — reel stills used on the timeline, monitor and cards.
 
