@@ -4,7 +4,7 @@ import { PCFSoftShadowMap } from 'three'
 import CameraRig from './CameraRig'
 import Stage from './Stage'
 import Humanoid from './Humanoid'
-import CinemaCamera from './CinemaCamera'
+import DslrCamera from './DslrCamera'
 import Timeline from './Timeline'
 import SocialIcons from './SocialIcons'
 import Effects from './Effects'
@@ -30,7 +30,7 @@ export default function Experience() {
       <Suspense fallback={null}>
         <Stage />
         <Humanoid />
-        <CinemaCamera />
+        <DslrCamera />
         <Timeline />
         <SocialIcons />
         <Effects />

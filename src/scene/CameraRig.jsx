@@ -10,17 +10,19 @@ import { damp, lerp, range, smooth } from '../lib/math'
    move never kinks. `hold` keys ease in and out (the camera settles);
    others pass through at speed, which is what makes the orbit sweep. */
 
-const O = new Vector3(-0.1, 1.4, 0.3) // the orbit's centre: camera + figure
+const O = new Vector3(-0.06, 1.34, 0.2) // the orbit's centre: camera + figure
 const orbit = (theta, r, h) => new Vector3(O.x + Math.sin(theta) * r, O.y + h, O.z + Math.cos(theta) * r)
 
 const KEYS = [
   { p: 0.0, pos: [0, 1.3, 5.0], look: [0, 1.15, 0], hold: true },
   { p: 0.12, pos: [0, 1.45, 4.3], look: [0, 1.25, 0] },
-  { p: 0.22, pos: [-1.7, 1.55, 3.0], look: [-0.15, 1.35, 0.25] },
-  { p: 0.3, pos: orbit(-0.6, 1.95, 0.18), look: O, hold: true },
-  { p: 0.345, pos: orbit(-0.05, 1.8, 0.25), look: O },
-  { p: 0.38, pos: orbit(0.6, 1.75, 0.35), look: O },
-  { p: 0.41, pos: orbit(1.15, 1.9, 0.5), look: O },
+  { p: 0.22, pos: [-1.6, 1.5, 2.8], look: [-0.1, 1.32, 0.2] },
+  // Held-camera close-up: aim low and to his left so he and the camera sit
+  // up and to the right, clear of the chapter copy.
+  { p: 0.3, pos: orbit(-0.6, 1.85, 0.28), look: [-0.4, 1.3, 0.12], hold: true },
+  { p: 0.345, pos: orbit(-0.05, 1.45, 0.25), look: [-0.2, 1.2, 0.2] },
+  { p: 0.38, pos: orbit(0.6, 1.45, 0.32), look: O },
+  { p: 0.41, pos: orbit(1.15, 1.65, 0.45), look: O },
   { p: 0.47, pos: [1.5, 2.35, 4.7], look: [0, 1.75, -2.2], hold: true },
   { p: 0.55, pos: [0.4, 2.25, 4.7], look: [0, 1.8, -2.2] },
   { p: 0.61, pos: [-1.0, 2.45, 4.4], look: [0, 1.7, -2.2], hold: true },

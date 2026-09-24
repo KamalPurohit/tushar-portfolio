@@ -189,6 +189,85 @@ function createRetarget(source, target) {
   }
 }
 
+/* ---- hands --------------------------------------------------------------- */
+
+const FINGERS = ['Index', 'Middle', 'Ring', 'Pinky']
+
+/** The bones needed to orient a hand and curl its fingers, plus which way
+ *  its palm faces relative to the bone layout. Null if the rig has no
+ *  finger bones. */
+function handRig(bone, side) {
+  const hand = bone(`${side}Hand`)
+  const index = bone(`${side}HandIndex1`)
+  const middle = bone(`${side}HandMiddle1`)
+  const pinky = bone(`${side}HandPinky1`)
+  if (!hand || !index || !middle || !pinky) return null
+  const chains = FINGERS.map((f) =>
+    [1, 2, 3, 4].map((i) => bone(`${side}Hand${f}${i}`)).filter(Boolean),
+  )
+  // fingers × (index→pinky) points out of the palm on a right hand and out
+  // of the back of a left one — anatomy, so no calibration needed.
+  const sign = side === 'Right' ? 1 : -1
+  return { hand, index, middle, pinky, chains, sign }
+}
+
+const _h1 = new Vector3()
+const _h2 = new Vector3()
+const _h3 = new Vector3()
+
+function fingerDir(h, out) {
+  h.hand.getWorldPosition(_h1)
+  return h.middle.getWorldPosition(out).sub(_h1).normalize()
+}
+
+function palmNormal(h, out) {
+  fingerDir(h, _h2)
+  h.index.getWorldPosition(_h1)
+  h.pinky.getWorldPosition(_h3).sub(_h1) // across the knuckles
+  return out.crossVectors(_h2, _h3).normalize().multiplyScalar(h.sign)
+}
+
+const _f = new Vector3()
+const _n = new Vector3()
+const _wantN = new Vector3()
+const _qa = new Quaternion()
+const _qb = new Quaternion()
+const _axis = new Vector3()
+
+/** Turn the hand so its fingers point along `fingers` and its palm faces
+ *  `palm` (world directions), blended by `weight`. */
+function orientHand(h, fingers, palm, weight) {
+  if (!h || weight < 0.002) return
+  fingerDir(h, _f)
+  palmNormal(h, _n)
+  _qa.setFromUnitVectors(_f, fingers)
+  _n.applyQuaternion(_qa)
+  // Then roll about the finger axis until the palm faces the right way.
+  _n.addScaledVector(fingers, -_n.dot(fingers)).normalize()
+  _wantN.copy(palm).addScaledVector(fingers, -palm.dot(fingers)).normalize()
+  _qb.setFromUnitVectors(_n, _wantN)
+  _qa.premultiply(_qb)
+  _qb.identity().slerp(_qa, weight)
+  rotateBoneWorld(h.hand, _qb)
+}
+
+/** Curl each finger toward the palm by `angle` per joint. Every joint hinges
+ *  about the hand's own knuckle axis (fixed for the whole hand), so the
+ *  curl keeps going past 90° into a fist instead of stalling once a segment
+ *  faces the palm. */
+function curlFingers(h, angle) {
+  if (!h || Math.abs(angle) < 0.002) return
+  fingerDir(h, _f)
+  palmNormal(h, _n)
+  _axis.crossVectors(_f, _n).normalize()
+  for (const chain of h.chains) {
+    for (let i = 0; i < chain.length - 1; i++) {
+      _qa.setFromAxisAngle(_axis, angle * (i === 0 ? 0.8 : 1))
+      rotateBoneWorld(chain[i], _qa)
+    }
+  }
+}
+
 /* ---- component --------------------------------------------------------- */
 
 export default function Humanoid() {
@@ -208,6 +287,8 @@ export default function Humanoid() {
       eyeR: bone('RightEye'),
       armR: [bone('RightArm'), bone('RightForeArm'), bone('RightHand')],
       armL: [bone('LeftArm'), bone('LeftForeArm'), bone('LeftHand')],
+      handR: handRig(bone, 'Right'),
+      handL: handRig(bone, 'Left'),
     }
   }, [scene])
 
@@ -374,12 +455,17 @@ export default function Humanoid() {
       rotateBoneWorld(bone, _turn)
     }
 
-    // Hands onto the camera rig: right on the handgrip, left on the lens.
+    // Hands onto the gimbal handle: right hand above, left below.
     const hold = window4(p, 0.235, 0.29, 0.385, 0.415)
     tmp.poleR.set(-0.5, -1, -0.35).applyQuaternion(tmp.rootQ)
     tmp.poleL.set(0.6, -1, -0.2).applyQuaternion(tmp.rootQ)
     reach(...rig.armR, anchors.gripRight, tmp.poleR, hold)
-    reach(...rig.armL, anchors.gripLeft, tmp.poleL, hold * 0.95)
+    reach(...rig.armL, anchors.gripLeft, tmp.poleL, hold)
+    // Then turn the hands onto the gimbal handle and close them into fists.
+    orientHand(rig.handR, anchors.fingersRight, anchors.palmRight, hold)
+    orientHand(rig.handL, anchors.fingersLeft, anchors.palmLeft, hold)
+    curlFingers(rig.handR, 1.1 * hold)
+    curlFingers(rig.handL, 1.1 * hold)
   })
 
   return (

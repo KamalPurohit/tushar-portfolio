@@ -6,6 +6,11 @@ import { Vector3 } from 'three'
 export const anchors = {
   gripRight: new Vector3(-0.2, 1.3, 0.4),
   gripLeft: new Vector3(0, 1.3, 0.55),
+  /** Which way each hand's fingers and palm should face while holding. */
+  fingersRight: new Vector3(0, 1, 0),
+  palmRight: new Vector3(1, 0, 0),
+  fingersLeft: new Vector3(0, 0, 1),
+  palmLeft: new Vector3(0, 1, 0),
   monitor: new Vector3(-0.1, 1.55, 0.3),
   editCursor: new Vector3(0, 1.8, -2.2),
   /** Where the lens should focus this frame (depth of field). */

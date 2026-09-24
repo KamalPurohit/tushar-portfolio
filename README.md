@@ -13,7 +13,7 @@ scroll. Deployed on Netlify.
 | Chapter | Scroll | What happens |
 |---|---|---|
 | 01 The Person | 0 – 17% | The figure under a top light, his name in 3D behind him. Head, neck, spine and eyes track the cursor; the key light pans with it. |
-| 02 The Camera | 17 – 42% | A cinema camera (PL mount, knurled lens rings, matte box, rods, follow-focus, monitor, handgrip) flies in; he watches it arrive, takes it in both hands (two-bone IK) and the view orbits the rig. |
+| 02 The Camera | 17 – 42% | A DSLR on a 3-axis handheld gimbal flies in; he watches it arrive and takes the handle in both hands (two-bone IK, hands turned and closed into fists). The handle sways with his breathing while the gimbal holds the camera level; the view orbits him. |
 | 03 The Edit | 42 – 64% | He turns to a floating NLE: grading wheels, viewer, tools, ruler, markers, video/audio tracks. A 3D mouse drags a clip, razor-cuts another, scrubs the playhead and grades. Scroll explodes the layers in depth, then scatters the clips. |
 | 04 The Audience | 64 – 84% | Six extruded platform icons orbit him, scatter and regroup with scroll, lean toward the cursor, and open a preview card on hover (tap on touch). |
 | 05 The Story | 84 – 100% | The camera cranes back; contact details, selected work and brands. |
@@ -40,8 +40,8 @@ src/
     Experience.jsx      <Canvas>, adaptive DPR, scene graph
     CameraRig.jsx       scroll → spline camera path, pointer parallax, hand-held drift
     Stage.jsx           floor, volumetric light, dust, lights, 3D name
-    Humanoid.jsx        model, gaze tracking, gestures, arm IK
-    CinemaCamera.jsx    procedural camera package
+    Humanoid.jsx        model, retargeting, gaze, gestures, arm IK, hand pose
+    DslrCamera.jsx      procedural DSLR + gimbal, and the hand-hold targets
     Timeline.jsx        procedural editing timeline + scripted mouse
     SocialIcons.jsx     extruded platform icons + hover cards
     Effects.jsx         DOF, bloom, grain, vignette
