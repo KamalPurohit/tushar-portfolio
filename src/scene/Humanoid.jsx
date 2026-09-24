@@ -156,22 +156,31 @@ function createRetarget(source, target) {
   })
   // traverse() is parent-first, so each parent is posed before its children.
   const hips = pairs.find((p) => boneKey(p.t.name) === 'Hips')
+  // Everything above is captured in the target's rest frame. At runtime the
+  // avatar's root is turned (to face the camera rig, the edit…), so rotations
+  // and the hip offset are carried into wherever the root now points.
+  const rootRestInv = target.getWorldQuaternion(new Quaternion()).invert()
   const sHipRest = hips && wp(hips.s)
-  const tHipRest = hips && wp(hips.t)
-  const hipScale = hips ? tHipRest.y / sHipRest.y : 1
+  const tHipRestLocal = hips && target.worldToLocal(wp(hips.t))
+  const hipScale = hips ? wp(hips.t).y / sHipRest.y : 1
   const q = new Quaternion()
   const parentQ = new Quaternion()
+  const rootTurn = new Quaternion()
   const hip = new Vector3()
   return function apply() {
     source.updateMatrixWorld(true)
+    target.updateMatrixWorld(true)
+    target.getWorldQuaternion(rootTurn).multiply(rootRestInv)
     if (hips) {
-      // Carry the idle's weight shift, in world space, scaled to the avatar.
-      hips.s.getWorldPosition(hip).sub(sHipRest).multiplyScalar(hipScale).add(tHipRest)
+      // Carry the idle's weight shift, scaled to the avatar, in its own frame.
+      hips.s.getWorldPosition(hip).sub(sHipRest).multiplyScalar(hipScale)
+      hip.add(tHipRestLocal)
+      target.localToWorld(hip)
       hips.t.position.copy(hips.t.parent.worldToLocal(hip))
       hips.t.updateMatrixWorld()
     }
     for (const { s, t, sRestInv, tRest } of pairs) {
-      s.getWorldQuaternion(q).multiply(sRestInv).multiply(tRest)
+      s.getWorldQuaternion(q).multiply(sRestInv).multiply(tRest).premultiply(rootTurn)
       t.parent.getWorldQuaternion(parentQ)
       t.quaternion.copy(parentQ.invert().multiply(q))
       t.updateMatrixWorld()
@@ -297,7 +306,6 @@ export default function Humanoid() {
     if (!g) return
 
     mixer.update(dt)
-    retarget()
 
     // Gesture cues when entering a chapter.
     const ch = p < 0.64 ? 'early' : p < 0.84 ? 'social' : 'contact'
@@ -316,6 +324,8 @@ export default function Humanoid() {
     tmp.yaw = damp(tmp.yaw, bodyYaw + state.pointer.x * 0.1 * facingFront, 4, dt)
     g.rotation.y = tmp.yaw
     g.updateMatrixWorld(true)
+    // Pose the avatar from the clips now that its root faces the right way.
+    retarget()
 
     // What the eyes want to look at: the cursor, the camera's monitor, or
     // the edit cursor on the timeline — cross-faded by chapter.
